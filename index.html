@@ -20,6 +20,12 @@
         <div class="blob blob-2"></div>
     </div>
 
+    <!-- Barre résultat sticky — mobile uniquement -->
+    <div id="sticky-result-bar" aria-hidden="true">
+        <span class="sticky-item">Cible : <strong id="sticky-dose">—</strong></span>
+        <span class="sticky-item">Entredose : <strong id="sticky-btd">—</strong></span>
+    </div>
+
     <main class="app-container">
         <header class="app-header">
             <div class="logo">
@@ -38,9 +44,9 @@
                 <!-- Source -->
                 <div class="calc-card source-card">
                     <div class="card-header">
-                        <h3>Opioïdes Actuels (Source)</h3>
+                        <h3>Opioïdes actuels</h3>
                         <button id="add-source-btn" class="btn-small">
-                            <span>+ Ajouter</span>
+                            <span>+ Ajouter une molécule</span>
                         </button>
                     </div>
                     
@@ -48,29 +54,29 @@
                         <!-- Les opiacés seront injectés ici par JS -->
                     </div>
 
-                    <!-- Section Entredoses Reçues -->
+                    <!-- Section Entredoses PRN -->
                     <div class="prn-usage-box">
-                        <h4>Consommation d'Entredoses (PRN) / 24h</h4>
+                        <h4>Entredoses consommées (PRN) · 24h</h4>
                         <div class="prn-inputs">
                             <div class="form-group">
                                 <label>Dose par prise</label>
                                 <div class="input-wrapper">
-                                    <input type="number" id="prn-dose-val" placeholder="Ex: 10" min="0" step="1">
+                                    <input type="number" id="prn-dose-val" placeholder="Ex. : 10" min="0" step="1">
                                     <span class="unit">mg</span>
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>Nb de prises</label>
+                                <label>Nombre de prises</label>
                                 <div class="input-wrapper">
                                     <input type="number" id="prn-count" placeholder="0" min="0" step="1">
-                                    <span class="unit">/24h</span>
+                                    <span class="unit">prises/24h</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="total-mme-display">
-                        Total Équivalent Morphine PO : <span id="total-mme">0</span> mg/24h
+                        Équivalent morphine PO · total : <span id="total-mme" aria-live="polite">0</span> mg/24h
                     </div>
                 </div>
 
@@ -84,9 +90,9 @@
 
                 <!-- Target -->
                 <div class="calc-card target-card">
-                    <h3>Molécule Cible</h3>
+                    <h3>Molécule cible</h3>
                     <div class="form-group">
-                        <label for="target-drug">Médicament & Voie</label>
+                        <label for="target-drug">Molécule et voie</label>
                         <select id="target-drug">
                             <option value="morphine_po" data-unit="mg/24h">Morphine PO (MS Direct, MS Contin...)</option>
                             <option value="morphine_sc" data-unit="mg/24h">Morphine S/C (Stellorphine...)</option>
@@ -102,14 +108,31 @@
                         </select>
                     </div>
                     
-                    <div class="result-display">
-                        <div class="result-label">Dose Équivalente Tolérée</div>
+                    <div class="result-display" id="result-display">
+                        <div class="result-label">Dose équivalente de départ</div>
                         <div class="result-value">
-                            <span id="target-dose">0</span>
+                            <span id="target-dose" aria-live="polite">—</span>
                             <span class="unit" id="target-unit">mg/24h</span>
                         </div>
-                        <div class="reduction-warning">
-                            <strong>Sécurité (Tolérance croisée) :</strong> Ratios asymétriques ! Nos ratios (basés SFAP/AFSOS) intègrent <strong>déjà</strong> une réduction préventive de sécurité lors des changements de molécule. Le résultat affiché est la posologie de départ fortement sécurisée. Une nouvelle titration clinique est toujours requise.
+                        <!-- Warning tolérance croisée — collapsible -->
+                        <div class="warning-collapsible">
+                            <button class="warning-trigger" aria-expanded="false" aria-controls="warning-tolerance-content" type="button">
+                                <svg class="warning-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                                <span class="warning-trigger-text">Réduction de sécurité intégrée — voir détail</span>
+                                <svg class="warning-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </button>
+                            <div class="warning-content" id="warning-tolerance-content">
+                                <div class="warning-content-inner">
+                                    <div class="warning-content-body">
+                                        Les ratios utilisés (source : SFAP/AFSOS) intègrent déjà une réduction préventive adaptée à la tolérance croisée. La dose affichée est la posologie de départ recommandée.<br><br>
+                                        Une titration clinique reste indispensable après toute rotation.
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -117,22 +140,22 @@
 
             <div class="breakthrough-dose glass-panel-inner">
                 <div class="btd-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
                 </div>
                 <div class="btd-content">
-                    <h4>Entre-Doses (Breakthrough Pain) - Cible</h4>
-                    <p id="btd-display"><span id="btd-calc">0 mg PO Morphine</span></p>
-                    <small>Règle : 10-15% dose 24h (Paliers spécifiques pour SC). Délai min : <strong>30 min (SC)</strong>.<br><span style="color:var(--warning-text); display:inline-block; margin-top:5px;">⚠️ Ne pas utiliser de Fentanyl transmuqueux en entredose pendant la phase de titration du traitement de fond !</span></small>
+                    <h4>Entredose cible (douleur irruptive)</h4>
+                    <p id="btd-display"><span id="btd-calc" aria-live="polite">—</span></p>
+                    <small>10–15 % de la dose de fond sur 24h · paliers SC spécifiques. Intervalle minimum SC : <strong>30 min</strong>.<br><span class="btd-warning-text">⚠️ Éviter le fentanyl transmuqueux en entredose pendant la titration du traitement de fond.</span></small>
                 </div>
             </div>
 
-            <div class="justification-box" id="justification-container" style="display: none; margin-top: 1.5rem; background: rgba(15, 23, 42, 0.4); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.05);">
-                <h4 style="color: var(--accent); margin-bottom: 0.75rem;">Détail et Justification du Calcul</h4>
-                <ul id="justification-list" style="color: var(--text-secondary); font-size: 0.9rem; margin-left: 1.2rem; line-height: 1.6;"></ul>
+            <div class="justification-box" id="justification-container">
+                <h4>Détail du calcul</h4>
+                <ul id="justification-list" class="justification-list"></ul>
             </div>
 
             <div class="print-actions">
@@ -142,33 +165,54 @@
                         <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
                         <rect x="6" y="14" width="12" height="8"></rect>
                     </svg>
-                    Imprimer le Dossier
+                    Imprimer le dossier
                 </button>
             </div>
         </section>
 
         <section class="glass-panel reference-section">
-            <h2>Tableau de Référence de l'Arsenal</h2>
-            <div class="table-responsive">
-                <table id="reference-table">
-                    <thead>
-                        <tr>
-                            <th>Molécule & Nom</th>
-                            <th>Forme</th>
-                            <th>Dosages Disponibles</th>
-                            <th>Délais d'action</th>
-                            <th>Durée d'action</th>
-                            <th>Remarques</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Injecté par JS -->
-                    </tbody>
-                </table>
+            <button class="section-toggle" aria-expanded="false" aria-controls="reference-section-body" type="button">
+                Arsenal opioïde — référence
+                <svg class="section-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </button>
+
+            <div class="reference-section-content" id="reference-section-body">
+                <div class="reference-section-content-inner">
+                    <div class="table-filter-bar">
+                        <div class="filter-input-wrapper">
+                            <svg class="filter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <input type="search" id="table-filter" placeholder="Rechercher une molécule..." aria-label="Filtrer le tableau de référence par molécule">
+                            <button class="filter-clear-btn" id="filter-clear-btn" aria-label="Effacer la recherche" hidden>×</button>
+                        </div>
+                        <p class="filter-count" aria-live="polite" id="filter-count"></p>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="reference-table">
+                            <thead>
+                                <tr>
+                                    <th>Molécule & Nom</th>
+                                    <th>Forme</th>
+                                    <th>Dosages Disponibles</th>
+                                    <th>Délais d'action</th>
+                                    <th>Durée d'action</th>
+                                    <th>Remarques</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injecté par JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="disclaimer">
+                        Outil d'aide à la décision — résultats théoriques. Base calculatoire : morphine SC = PO/2, IV = PO/3 (Stellorphine®). La responsabilité clinique incombe au prescripteur.
+                    </p>
+                </div>
             </div>
-            <p class="disclaimer">
-                <strong>Attention:</strong> Outil d'aide à la décision. Les résultats sont théoriques. Base calculatoire M+ S/C=PO/2, IV=PO/3.
-            </p>
         </section>
     </main>
 
@@ -176,7 +220,7 @@
     <template id="source-row-template">
         <div class="source-row">
             <div class="form-group">
-                <label>Médicament</label>
+                <label>Molécule</label>
                 <select class="source-drug-select">
                     <option value="morphine_po" data-unit="mg/24h">Morphine PO (MS Direct, MS Contin...)</option>
                     <option value="morphine_sc" data-unit="mg/24h">Morphine S/C (Stellorphine...)</option>
@@ -193,13 +237,13 @@
                 </select>
             </div>
             <div class="form-group dose-group">
-                <label>Posologie (/24h)</label>
+                <label>Dose /24h</label>
                 <div class="input-wrapper">
-                    <input type="number" class="source-dose-input" placeholder="Ex: 60" min="0" step="0.1">
+                    <input type="number" class="source-dose-input" placeholder="Ex. : 60" min="0" step="0.1">
                     <span class="unit source-unit-display">mg</span>
                 </div>
             </div>
-            <button class="btn-remove" title="Supprimer cet opiacé">
+            <button class="btn-remove" aria-label="Supprimer cette molécule">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>

@@ -80,6 +80,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalMmeDisplay = document.getElementById('total-mme');
     const targetDoseDisplay = document.getElementById('target-dose');
     const btdCalc = document.getElementById('btd-calc');
+    const resultDisplay = document.getElementById('result-display');
+    const stickyBar = document.getElementById('sticky-result-bar');
+    const stickyDose = document.getElementById('sticky-dose');
+    const stickyBtd = document.getElementById('sticky-btd');
 
     // Mettre à jour l'unité cible
     function updateTargetUnit() {
@@ -138,9 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
         totalMmeDisplay.textContent = Math.round(totalMorphineEquiv * 100) / 100;
 
         if (totalMorphineEquiv <= 0) {
-            targetDoseDisplay.textContent = '0';
-            btdCalc.textContent = '0 mg PO';
+            targetDoseDisplay.textContent = '—';
+            btdCalc.textContent = '—';
+            if (resultDisplay) resultDisplay.classList.remove('has-value');
             if (justifContainer) justifContainer.style.display = 'none';
+            if (stickyBar) stickyBar.classList.remove('is-visible');
             return;
         }
 
@@ -198,12 +204,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Alerte Titration si > 3 entredoses
         if (prnCount > 3) {
-            justificationSteps.push(`<span style="color:var(--warning-text)">⚠️ Patient sous-dosé (> 3 entredoses/24h) : Envisager majoration de la dose de fond de 30 à 50%.</span>`);
+            justificationSteps.push(`<span style="color:var(--warning-text)">⚠️ Sous-dosage probable (> 3 entredoses/24h) — majoration recommandée : +30 à +50 % de la dose de fond.</span>`);
         }
 
         if (justifContainer) {
             justifList.innerHTML = justificationSteps.map(step => `<li>${step}</li>`).join('');
             justifContainer.style.display = 'block';
+        }
+
+        // Activer le glow sur le résultat
+        if (resultDisplay) resultDisplay.classList.add('has-value');
+
+        // Mettre à jour la sticky bar mobile
+        if (stickyBar && stickyDose && stickyBtd) {
+            const doseText = targetDoseDisplay.textContent;
+            const unitText = targetUnit.textContent;
+            stickyDose.textContent = doseText !== '—' ? `${doseText} ${unitText}` : '—';
+            stickyBtd.textContent = btdCalc.textContent;
+            stickyBar.classList.add('is-visible');
         }
     }
 
@@ -238,6 +256,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedOpt = select.options[select.selectedIndex];
         unitDisplay.textContent = selectedOpt.getAttribute('data-unit').split('/')[0];
 
+        // Mettre à jour aria-label du btn-remove selon la molécule sélectionnée
+        function updateRemoveLabel() {
+            const molName = select.options[select.selectedIndex].text.split('(')[0].trim();
+            removeBtn.setAttribute('aria-label', `Supprimer ${molName}`);
+        }
+        select.addEventListener('change', updateRemoveLabel);
+        updateRemoveLabel();
+
         // Ajouter au DOM
         sourcesContainer.appendChild(row);
     }
@@ -256,8 +282,64 @@ document.addEventListener('DOMContentLoaded', () => {
     // Bouton d'impression
     const printBtn = document.getElementById('print-btn');
     if(printBtn) {
-        printBtn.addEventListener('click', () => {
-            window.print();
+        printBtn.addEventListener('click', () => window.print());
+    }
+
+    // Warning tolérance croisée — collapsible
+    const warningTrigger = document.querySelector('.warning-trigger');
+    const warningContent = document.getElementById('warning-tolerance-content');
+    if (warningTrigger && warningContent) {
+        warningTrigger.addEventListener('click', () => {
+            const isOpen = warningTrigger.getAttribute('aria-expanded') === 'true';
+            warningTrigger.setAttribute('aria-expanded', String(!isOpen));
+            warningContent.classList.toggle('is-open', !isOpen);
+        });
+    }
+
+    // Filtre tableau de référence
+    const tableFilter = document.getElementById('table-filter');
+    const filterClearBtn = document.getElementById('filter-clear-btn');
+    const filterCount = document.getElementById('filter-count');
+    const tableRows = document.querySelectorAll('#reference-table tbody tr');
+    const totalRows = tableRows.length;
+
+    if (filterCount) filterCount.textContent = `${totalRows} molécule(s)`;
+
+    function filterTable(term) {
+        const q = term.trim().toLowerCase();
+        let visible = 0;
+        tableRows.forEach(row => {
+            const match = !q || row.textContent.toLowerCase().includes(q);
+            row.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+        if (filterCount) {
+            filterCount.textContent = q
+                ? `${visible} molécule(s) trouvée(s) pour « ${term} »`
+                : `${totalRows} molécule(s)`;
+        }
+        if (filterClearBtn) filterClearBtn.hidden = !q;
+    }
+
+    if (tableFilter) {
+        tableFilter.addEventListener('input', () => filterTable(tableFilter.value));
+    }
+    if (filterClearBtn) {
+        filterClearBtn.addEventListener('click', () => {
+            tableFilter.value = '';
+            filterTable('');
+            tableFilter.focus();
+        });
+    }
+
+    // Tableau de référence — collapsible
+    const refToggle = document.querySelector('.reference-section .section-toggle');
+    const refContent = document.getElementById('reference-section-body');
+    if (refToggle && refContent) {
+        refToggle.addEventListener('click', () => {
+            const isOpen = refToggle.getAttribute('aria-expanded') === 'true';
+            refToggle.setAttribute('aria-expanded', String(!isOpen));
+            refContent.classList.toggle('is-open', !isOpen);
         });
     }
 
